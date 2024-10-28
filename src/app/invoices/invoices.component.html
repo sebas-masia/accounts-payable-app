@@ -1,0 +1,241 @@
+<div class="w-full flex justify-center">
+  <!-- Content container with 80% width and centered -->
+  <div class="w-4/5 mt-6">
+    <!-- Header -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Invoices</h1>
+    </div>
+  
+    <!-- Search and Actions Row -->
+    <div class="flex justify-between items-center mb-6">
+      <div class="flex items-center gap-4">
+        <!-- Search -->
+        <div class="relative w-96">
+          <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+            <i class="fas fa-search text-gray-400"></i>
+          </div>
+          <input
+            type="search"
+            (input)="onSearch($event)"
+            class="block w-full p-2 ps-10 text-sm border border-gray-200 rounded-lg"
+            placeholder="Search invoices..."
+          >
+        </div>
+        
+        <!-- Export & Print buttons -->
+        <button class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+          <i class="fas fa-download mr-2"></i>Export
+        </button>
+        <button class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+          <i class="fas fa-print mr-2"></i>Print
+        </button>
+      </div>
+      
+      <!-- Add new invoice button -->
+      <button class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+        <i class="fas fa-plus mr-2"></i>New Invoice
+      </button>
+    </div>
+
+    <!-- Summary cards section -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="bg-white p-4 rounded-lg border border-gray-200">
+        <div class="text-sm text-gray-500">Total Invoices</div>
+        <div class="text-2xl font-semibold">{{filteredInvoices.length}}</div>
+      </div>
+      <div class="bg-white p-4 rounded-lg border border-gray-200">
+        <div class="text-sm text-gray-500">Pending</div>
+        <div class="text-2xl font-semibold text-yellow-600">
+          {{getPendingCount()}}
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded-lg border border-gray-200">
+        <div class="text-sm text-gray-500">Overdue</div>
+        <div class="text-2xl font-semibold text-red-600">
+          {{getOverdueCount()}}
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded-lg border border-gray-200">
+        <div class="text-sm text-gray-500">Total Amount</div>
+        <div class="text-2xl font-semibold text-green-600">
+          ${{getTotalAmount() | number:'1.2-2'}}
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+      <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+        <!-- Table header with sorting -->
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+          <tr>
+            <th scope="col" class="p-4">
+              <input type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded">
+            </th>
+            <th 
+              scope="col" 
+              class="px-6 py-3 cursor-pointer hover:bg-gray-100"
+              (click)="sort('number')"
+            >
+              <div class="flex items-center">
+                Invoice #
+                <i [class]="getSortIcon('number')" class="ml-1"></i>
+              </div>
+            </th>
+            <th 
+              scope="col" 
+              class="px-6 py-3 cursor-pointer hover:bg-gray-100"
+              (click)="sort('vendor')"
+            >
+              <div class="flex items-center">
+                Vendor
+                <i [class]="getSortIcon('vendor')" class="ml-1"></i>
+              </div>
+            </th>
+            <th 
+              scope="col" 
+              class="px-6 py-3 cursor-pointer hover:bg-gray-100"
+              (click)="sort('amount')"
+            >
+              <div class="flex items-center">
+                Amount
+                <i [class]="getSortIcon('amount')" class="ml-1"></i>
+              </div>
+            </th>
+            <th 
+              scope="col" 
+              class="px-6 py-3 cursor-pointer hover:bg-gray-100"
+              (click)="sort('dueDate')"
+            >
+              <div class="flex items-center">
+                Due Date
+                <i [class]="getSortIcon('dueDate')" class="ml-1"></i>
+              </div>
+            </th>
+            <th 
+              scope="col" 
+              class="px-6 py-3 cursor-pointer hover:bg-gray-100"
+              (click)="sort('status')"
+            >
+              <div class="flex items-center">
+                Status
+                <i [class]="getSortIcon('status')" class="ml-1"></i>
+              </div>
+            </th>
+            <th scope="col" class="px-6 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let invoice of getPaginatedInvoices()" class="bg-white border-b hover:bg-gray-50">
+            <td class="w-4 p-4">
+              <div class="flex items-center">
+                <input type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+              </div>
+            </td>
+            <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
+              {{invoice.number}}
+            </td>
+            <td class="px-6 py-4">{{invoice.vendor}}</td>
+            <td class="px-6 py-4">${{invoice.amount.toFixed(2)}}</td>
+            <td class="px-6 py-4">{{invoice.dueDate}}</td>
+            <td class="px-6 py-4">
+              <span class="px-2 py-1 text-xs font-medium rounded-full"
+                [class.bg-yellow-100]="invoice.status === 'Pending'"
+                [class.text-yellow-800]="invoice.status === 'Pending'"
+                [class.dark:bg-yellow-900]="invoice.status === 'Pending'"
+                [class.dark:text-yellow-300]="invoice.status === 'Pending'"
+                [class.bg-green-100]="invoice.status === 'Paid'"
+                [class.text-green-800]="invoice.status === 'Paid'"
+                [class.dark:bg-green-900]="invoice.status === 'Paid'"
+                [class.dark:text-green-300]="invoice.status === 'Paid'"
+                [class.bg-red-100]="invoice.status === 'Overdue'"
+                [class.text-red-800]="invoice.status === 'Overdue'"
+                [class.dark:bg-red-900]="invoice.status === 'Overdue'"
+                [class.dark:text-red-300]="invoice.status === 'Overdue'"
+              >
+                {{invoice.status}}
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <button
+                [id]="'dropdownButton-' + invoice.id"
+                [attr.data-dropdown-toggle]="'dropdown-' + invoice.id"
+                class="inline-flex items-center text-gray-500 hover:text-gray-700"
+                type="button"
+              >
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+
+              <!-- Dropdown menu -->
+              <div
+                [id]="'dropdown-' + invoice.id"
+                class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700"
+              >
+                <ul class="py-2 text-sm text-gray-700 dark:text-gray-200">
+                  <li>
+                    <a (click)="onEdit(invoice)" class="flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer">
+                      <i class="fas fa-edit w-4 h-4 mr-2"></i>
+                      Edit
+                    </a>
+                  </li>
+                  <li>
+                    <a (click)="onDownload(invoice)" class="flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white cursor-pointer">
+                      <i class="fas fa-download w-4 h-4 mr-2"></i>
+                      Download
+                    </a>
+                  </li>
+                  <li>
+                    <a (click)="onDelete(invoice)" class="flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white text-red-600 cursor-pointer">
+                      <i class="fas fa-trash w-4 h-4 mr-2"></i>
+                      Delete
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  
+    <!-- Update the pagination section -->
+    <div class="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+      <!-- Items per page selector -->
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-gray-500">Show</span>
+        <select
+          (change)="onItemsPerPageChange($event)"
+          class="bg-white border border-gray-200 text-gray-900 text-sm rounded-lg p-1.5"
+        >
+          <option *ngFor="let option of rowsPerPageOptions" [value]="option">
+            {{option}}
+          </option>
+        </select>
+        <span class="text-sm text-gray-500">entries</span>
+      </div>
+
+      <!-- Showing X to Y of Z entries -->
+      <div class="text-sm text-gray-500">
+        Showing {{getStartIndex() + 1}} to {{getEndIndex()}} of {{filteredInvoices.length}} entries
+      </div>
+
+      <!-- Pagination controls -->
+      <div class="flex gap-2">
+        <button
+          [disabled]="currentPage === 1"
+          (click)="currentPage = currentPage - 1"
+          class="px-3 py-1 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+        >
+          Prev
+        </button>
+        <button
+          [disabled]="getEndIndex() >= filteredInvoices.length"
+          (click)="currentPage = currentPage + 1"
+          class="px-3 py-1 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
